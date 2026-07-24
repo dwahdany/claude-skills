@@ -5,8 +5,10 @@ My personal [Claude Code](https://code.claude.com) skills. Cloned directly into 
 ## Install
 
 ```sh
-git clone git@github.com:dwahdany/claude-skills.git ~/.claude/skills
+git clone https://github.com/dwahdany/claude-skills.git ~/.claude/skills
 ```
+
+Or with SSH: `git clone git@github.com:dwahdany/claude-skills.git ~/.claude/skills`
 
 ## Update
 
