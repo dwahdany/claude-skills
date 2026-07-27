@@ -21,6 +21,7 @@ git -C ~/.claude/skills pull
 | Skill | Description |
 |-------|-------------|
 | `/bro` | Restate the last message in plain human language, with no jargon. |
+| `/paper-figure` | Publication-ready figure styling for ML papers (ICML format) — matplotlib/seaborn setup, vector PDF output, colorblind-safe palettes, separate legend export, LaTeX integration. |
 
 ## Adding a skill
 
