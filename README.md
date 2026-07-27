@@ -22,6 +22,7 @@ git -C ~/.claude/skills pull
 |-------|-------------|
 | `/bro` | Restate the last message in plain human language, with no jargon. |
 | `/pro` | Rewrite prose into a dense internal register (acronym coinage, telegraphed body, term block) at a chosen depth `1`–`3`. Counterpart to `/bro`. |
+| `/paper-figure` | Publication-ready figure styling for ML papers (ICML format) — matplotlib/seaborn setup, vector PDF output, colorblind-safe palettes, separate legend export, LaTeX integration. |
 
 ## Adding a skill
 
