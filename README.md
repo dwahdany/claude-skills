@@ -4,16 +4,31 @@ My personal [Claude Code](https://code.claude.com) skills. Cloned directly into 
 
 ## Install
 
+Two options — pick one, not both. Both land in `~/.claude/skills/<name>/`, so mixing them means the CLI writes copies into a git working tree.
+
+### Clone (recommended)
+
 ```sh
 git clone https://github.com/dwahdany/claude-skills.git ~/.claude/skills
 ```
 
 Or with SSH: `git clone git@github.com:dwahdany/claude-skills.git ~/.claude/skills`
 
+### `npx skills`
+
+Works with [Claude Code and 70+ other agents](https://github.com/vercel-labs/skills) — installs copies rather than tracking the repo:
+
+```sh
+npx skills add dwahdany/claude-skills            # pick skills and agents interactively
+npx skills add dwahdany/claude-skills --list     # just list what's available
+npx skills add dwahdany/claude-skills --skill '*' -a claude-code -g -y   # all skills, globally, no prompts
+```
+
 ## Update
 
 ```sh
-git -C ~/.claude/skills pull
+git -C ~/.claude/skills pull   # if cloned
+npx skills update              # if installed via npx skills
 ```
 
 ## Skills
@@ -26,4 +41,4 @@ git -C ~/.claude/skills pull
 
 ## Adding a skill
 
-Create `<name>/SKILL.md` with frontmatter (`name`, `description`, optionally `disable-model-invocation: true`), then commit and push.
+Create `<name>/SKILL.md` with frontmatter (`name`, `description`, optionally `disable-model-invocation: true`), then commit and push. Top-level skill directories are picked up by both install methods — the `skills` CLI walks the repo root one level deep, so no `skills/` container directory is needed.
