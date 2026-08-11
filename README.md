@@ -1,12 +1,14 @@
 # claude-skills
 
-My personal [Claude Code](https://code.claude.com) skills. Cloned directly into `~/.claude/skills` so they load un-namespaced (`/bro`, not `/plugin:bro`).
+My personal [Claude Code](https://code.claude.com) skills. They install into `~/.claude/skills` so they load un-namespaced (`/bro`, not `/plugin:bro`).
 
 ## Install
 
-Two options — pick one, not both. Both land in `~/.claude/skills/<name>/`, so mixing them means the CLI writes copies into a git working tree.
+Two options — pick one, not both. Both end up at `~/.claude/skills/<name>/`, so mixing them means the CLI writes copies into a git working tree.
 
-### Clone (recommended)
+### Clone — if you want to edit the skills
+
+The checkout *is* the repo, so you can hack on a skill and push it back.
 
 ```sh
 git clone https://github.com/dwahdany/claude-skills.git ~/.claude/skills
@@ -14,9 +16,9 @@ git clone https://github.com/dwahdany/claude-skills.git ~/.claude/skills
 
 Or with SSH: `git clone git@github.com:dwahdany/claude-skills.git ~/.claude/skills`
 
-### `npx skills`
+### `npx skills` — if you just want to use them
 
-Works with [Claude Code and 70+ other agents](https://github.com/vercel-labs/skills) — installs copies rather than tracking the repo:
+Installs copies, lets you pick individual skills, and works with [Claude Code and 70+ other agents](https://github.com/vercel-labs/skills):
 
 ```sh
 npx skills add dwahdany/claude-skills            # pick skills and agents interactively
