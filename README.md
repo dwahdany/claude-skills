@@ -55,6 +55,23 @@ skill keeps its upstream `LICENSE` in its own folder and a provenance comment at
 To refresh a vendored skill, re-copy `SKILL.md` and `LICENSE` from upstream and update the
 provenance comment's commit hash.
 
+### `i-have-adhd` always-on
+
+Installing the skill only registers the command; nothing changes until you invoke it. To apply
+the rules from message one of every session, put upstream's condensed snippet
+([INSTALL.md](https://github.com/ayghri/i-have-adhd/blob/main/INSTALL.md), "Always-on") into the
+agent's persistent context file:
+
+| Runtime | File | Loaded from |
+|---------|------|-------------|
+| Prime Agent | `~/.prime/agent/AGENTS.md` | agent dir, every session (`core/resource-loader.js`) |
+| Claude Code | `~/.claude/CLAUDE.md` | global memory, every session |
+
+Upstream also ships a Claude Code `SessionStart` hook gated on `~/.claude/.i-have-adhd-always`,
+but that needs the full plugin (`claude plugin marketplace add ayghri/i-have-adhd`), which
+installs a second copy of the skill and collides with this one. The context-file route avoids
+that. Delete the snippet to go back to on-demand; "stop adhd mode" disables it for one session.
+
 ## Adding a skill
 
 Create `<name>/SKILL.md` with frontmatter (`name`, `description`, optionally `disable-model-invocation: true`), then commit and push. Top-level skill directories are picked up by both install methods — the `skills` CLI walks the repo root one level deep, so no `skills/` container directory is needed.
