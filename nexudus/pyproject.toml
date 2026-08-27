@@ -1,0 +1,16 @@
+[project]
+name = "nexudus"
+version = "0.1.0"
+description = "Authenticated client for the Nexudus coworking public API (deliveries, bookings, invoices, profile)."
+requires-python = ">=3.10"
+dependencies = ["httpx"]
+
+[project.scripts]
+nexudus = "rlm.skill:cli"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nexudus"]

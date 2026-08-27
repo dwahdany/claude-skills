@@ -41,6 +41,24 @@ npx skills update              # if installed via npx skills
 | `/pro` | Rewrite prose into a dense internal register (acronym coinage, telegraphed body, term block) at a chosen depth `1`–`3`. Counterpart to `/bro`. |
 | `/paper-figure` | Publication-ready figure styling for ML papers (ICML format) — matplotlib/seaborn setup, vector PDF output, colorblind-safe palettes, separate legend export, LaTeX integration. |
 | `/i-have-adhd` | ADHD-friendly output shaping: lead with the next action, number multi-step work, restate state each turn, cap lists, no preamble or closers. Vendored from [ayghri/i-have-adhd](https://github.com/ayghri/i-have-adhd) (MIT). |
+| `/gworkspace` | Read and write Google Docs, Drive, Gmail, Calendar, Sheets and Slides through a local [`workspace-mcp`](https://github.com/taylorwilsdon/google_workspace_mcp) server; tools are discovered from the server at runtime. |
+| `/nexudus` | Member API client for [Nexudus](https://www.nexudus.com)-powered coworking portals (`*.nexudus.site`): parcels/deliveries, room bookings, visitor invites, invoices, plans. 39 endpoint aliases plus a raw-path escape hatch. |
+
+## Python-backed skills (Prime Agent)
+
+`gworkspace` and `nexudus` are *Python-backed* skills: alongside `SKILL.md` they ship a
+`pyproject.toml` and `src/<import_name>/__init__.py`. [Prime Agent](https://github.com/PrimeIntellect-ai/prime-agent)
+installs the package into its persistent IPython kernel, so the agent calls the capability
+directly (`await nexudus("deliveries")`) instead of shelling out.
+
+- In Prime Agent: clone or symlink the skill directory into `~/.prime/agent/skills/<name>/`.
+- In Claude Code and other agents: they still load as ordinary markdown skills — the
+  instructions and endpoint reference are useful, but `await <name>(...)` needs the
+  Prime Agent kernel. Run the module directly (`uv run python -m <name>`) or port the calls.
+
+Neither skill contains credentials. `nexudus` reads them from `~/.config/nexudus/credentials.json`
+or `NEXUDUS_SITE`/`NEXUDUS_EMAIL`/`NEXUDUS_PASSWORD`; `gworkspace` talks to a localhost MCP
+server and expects `GWORKSPACE_MCP_TOKEN` in the environment.
 
 ## Third-party skills
 
