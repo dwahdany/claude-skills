@@ -40,6 +40,7 @@ npx skills update              # if installed via npx skills
 | `/bro` | Restate the last message in plain human language, with no jargon. |
 | `/pro` | Rewrite prose into a dense internal register (acronym coinage, telegraphed body, term block) at a chosen depth `1`–`3`. Counterpart to `/bro`. |
 | `/paper-figure` | Publication-ready figure styling for ML papers (ICML format) — matplotlib/seaborn setup, vector PDF output, colorblind-safe palettes, separate legend export, LaTeX integration. |
+| `/buchhaltungsbutler` | Operate [BuchhaltungsButler](https://www.buchhaltungsbutler.de/) through its API (Belege hochladen, Zahlungen zuordnen, buchen, Auswertungen) and apply German bookkeeping rules for a small UG/GmbH — SKR03/SKR04, Steuerschlüssel, §13b, UStVA, GoBD. API credentials come from Bitwarden CLI; see [setup](#buchhaltungsbutler-setup). |
 | `/i-have-adhd` | ADHD-friendly output shaping: lead with the next action, number multi-step work, restate state each turn, cap lists, no preamble or closers. Vendored from [ayghri/i-have-adhd](https://github.com/ayghri/i-have-adhd) (MIT). |
 | `/gworkspace` | Read and write Google Docs, Drive, Gmail, Calendar, Sheets and Slides through a local [`workspace-mcp`](https://github.com/taylorwilsdon/google_workspace_mcp) server; tools are discovered from the server at runtime. |
 | `/nexudus` | Member API client for [Nexudus](https://www.nexudus.com)-powered coworking portals (`*.nexudus.site`): parcels/deliveries, room bookings, visitor invites, invoices, plans. 39 endpoint aliases plus a raw-path escape hatch. |
@@ -89,6 +90,24 @@ Upstream also ships a Claude Code `SessionStart` hook gated on `~/.claude/.i-hav
 but that needs the full plugin (`claude plugin marketplace add ayghri/i-have-adhd`), which
 installs a second copy of the skill and collides with this one. The context-file route avoids
 that. Delete the snippet to go back to on-demand; "stop adhd mode" disables it for one session.
+
+### `buchhaltungsbutler` setup
+
+The skill never stores API credentials. `scripts/bb.sh` reads them per call from a Bitwarden
+login item (username = API Client, password = API Secret, hidden field `api_key`) using the
+[Bitwarden CLI](https://bitwarden.com/help/cli/). One-time setup, in your own terminal:
+
+```sh
+bw config server https://your-vault.example   # self-hosted only; skip for bitwarden.com
+bw login
+export BW_SESSION="$(bw unlock --raw)"
+~/.claude/skills/buchhaltungsbutler/scripts/bb-setup.sh   # prompts for the three values from BB → Einstellungen → Schnittstellen und API-Zugang
+```
+
+Afterwards start Claude Code from a shell that has `BW_SESSION` exported (`export BW_SESSION="$(bw unlock --raw)"`).
+Without it `bb.sh` prints `NOT_UNLOCKED` and does nothing (`bb-setup.sh` asks for your master password instead). `bw` is fetched via `nix-shell -p bitwarden-cli`
+if it is not installed; `jq` and `curl` are required. Read calls run freely; anything that writes needs
+`--write`, deletes/cancels need `--destructive`, and the skill tells Claude to confirm both with you first.
 
 ## Adding a skill
 
