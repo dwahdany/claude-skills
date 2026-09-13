@@ -3,7 +3,7 @@
 #
 #   bb.sh <endpoint> [json-body|-]        POST https://webapp.buchhaltungsbutler.de/api/v1/<endpoint>  ('-' = body from stdin)
 #                                         by-id endpoints take the id in the path: receipts/get/123, receipts/delete/123,
-#                                         receipts/restore/123, transactions/get/123  (spec writes them as .../id_by_customer)
+#                                         receipts/restore/123, transactions/get/123  (spec writes them as .../id_by_customer; verified live)
 #   bb.sh --all <endpoint> [json-body]    read endpoint: follow limit/offset paging, merge all .data rows
 #   bb.sh --upload <file> <type> [json]   receipts/upload with the file base64-encoded (type: 'invoice inbound', ...)
 #   bb.sh --check                         verify credentials + connectivity (accounts/get)
@@ -103,9 +103,8 @@ CANON="$ENDPOINT"
 if [[ "$ENDPOINT" =~ ^(receipts/get|receipts/delete|receipts/restore|transactions/get)/([0-9]+)$ ]]; then
   CANON="${BASH_REMATCH[1]}/id_by_customer"
 elif [[ "$ENDPOINT" == */id_by_customer ]]; then
-  # Fallback form: literal spec path with {"id_by_customer": N} in the body (in case the server wants it there).
-  jq -e 'has("id_by_customer")' <<<"$BODY" >/dev/null 2>&1 \
-    || die "'$ENDPOINT' needs the record id: use '${ENDPOINT%/id_by_customer}/123' (id in the path) or pass {\"id_by_customer\": 123} in the body"
+  # The literal spec path is not a real URL (it answers with an HTML page); the id must be the last path segment.
+  die "'$ENDPOINT' needs the record id in the path, e.g. '${ENDPOINT%/id_by_customer}/123'"
 fi
 in_list "$CANON" "${ALL_ENDPOINTS[@]}" || die "unknown endpoint '$ENDPOINT' (see --list-endpoints)"
 

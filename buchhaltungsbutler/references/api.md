@@ -118,7 +118,7 @@ Meaning of `rows`: the spec documents `rows` on every list response as **"Number
 - Requests take ids as **integers** (`receipt_id_by_customer: 123`); responses return them as **strings** (`"id_by_customer": "123"`). Cast before comparing.
 - Master data is addressed differently: creditors, debtors, posting accounts and payment accounts by `postingaccount_number` (integer in most requests, but a **string** on `/settings/add/creditor`, `/settings/add/debtor` and their batch items; always a string in responses); cost locations by `code`.
 - `/transactions/get` supports exclusive id bounds `id_by_customer_from` / `id_by_customer_to` (the boundary ids themselves are NOT returned).
-- The four `/…/id_by_customer` endpoints (`/receipts/get/id_by_customer`, `/receipts/delete/id_by_customer`, `/receipts/restore/id_by_customer`, `/transactions/get/id_by_customer`) do not declare the id parameter in the spec at all, yet each defines error 5 "invalid id_by_customer specified". Two independent client implementations and the vendor's integration-partner documentation put the id **in the URL path**, replacing the literal `id_by_customer` segment: `POST /receipts/get/123`, `POST /receipts/delete/123`, `POST /receipts/restore/123`, `POST /transactions/get/123` (body: `{"api_key": "<API_KEY>"}` plus `get_file` where applicable). If the server answers with error 5 to that form, retry with the literal path and a body field `id_by_customer` (integer). Neither form is verified against the live API in this reference; `scripts/bb.sh` supports both.
+- The four `/…/id_by_customer` endpoints (`/receipts/get/id_by_customer`, `/receipts/delete/id_by_customer`, `/receipts/restore/id_by_customer`, `/transactions/get/id_by_customer`) do not declare the id parameter in the spec at all, yet each defines error 5 "invalid id_by_customer specified". Two independent client implementations and the vendor's integration-partner documentation put the id **in the URL path**, replacing the literal `id_by_customer` segment: `POST /receipts/get/123`, `POST /receipts/delete/123`, `POST /receipts/restore/123`, `POST /transactions/get/123` (body: `{"api_key": "<API_KEY>"}` plus `get_file` where applicable). **Verified live (2026-09-13):** the path form works and returns a single object in `data`; the literal path `/…/id_by_customer` with a body field is not a real endpoint (it answers with an HTML page). `scripts/bb.sh` maps `transactions/get/123` to the canonical spec path for its safety classes.
 
 ### Domain vocabulary (German UI terms you will meet in messages and the UI)
 
@@ -291,7 +291,7 @@ Purpose: fetch one receipt by `id_by_customer`, optionally with the file as base
 | Parameter | Required | Type | Allowed values / format | Notes |
 |---|---|---|---|---|
 | `api_key` | yes | string | | |
-| `id_by_customer` | yes | integer | **URL path segment**: `POST /receipts/get/123` (fallback: body field `id_by_customer`) | **not declared in the spec's parameter list**; implied by the path placeholder, the description ("by id_by_customer") and error 5 "invalid id_by_customer specified"; see Conventions → Identifiers |
+| `id_by_customer` | yes | integer | **URL path segment**: `POST /receipts/get/123` (verified live) | **not declared in the spec's parameter list**; implied by the path placeholder, the description ("by id_by_customer") and error 5 "invalid id_by_customer specified"; see Conventions → Identifiers |
 | `get_file` | no | boolean | default false | include `file_content` (base64). `e_invoice_type` 0 → standard PDF, 1 → ZUGFeRD PDF, 2 → XRechnung XML |
 
 Response `data` (object, strings): `filename`, `id_by_customer`, `date`, `counterparty`, `invoicenumber`, `amount` (EUR value), `amount_original`, `currency` (`EUR`), `currency_original`, `exchangerate`, `vat`, `payment_date`, `account`, `type`, `e_invoice_type` (`"0"`/`"1"`/`"2"`), `list_direction`, `payment_reference`, `file_content` (base64, only with `get_file`), `file_type` (`pdf`/`xml`), `date_delivery`, `date_payment_due`, `link_to_receipt_id_by_customer`, `deleted`.
@@ -396,7 +396,7 @@ Purpose: mark a receipt as deleted (soft delete). Safety: delete, reversible via
 | Parameter | Required | Type | Allowed values / format | Notes |
 |---|---|---|---|---|
 | `api_key` | yes | string | | |
-| `id_by_customer` | yes | integer | **URL path segment**: `POST /receipts/delete/123` (fallback: body field) | not declared in the spec; implied by error 5 "invalid id_by_customer specified"; see Conventions → Identifiers |
+| `id_by_customer` | yes | integer | **URL path segment**: `POST /receipts/delete/123` | not declared in the spec; implied by error 5 "invalid id_by_customer specified"; see Conventions → Identifiers |
 
 Response: `id_by_customer`.
 
@@ -411,7 +411,7 @@ Purpose: undo a soft delete. Safety: revert.
 | Parameter | Required | Type | Allowed values / format | Notes |
 |---|---|---|---|---|
 | `api_key` | yes | string | | |
-| `id_by_customer` | yes | integer | **URL path segment**: `POST /receipts/restore/123` (fallback: body field) | not declared in the spec; implied by error 5; see Conventions → Identifiers |
+| `id_by_customer` | yes | integer | **URL path segment**: `POST /receipts/restore/123` | not declared in the spec; implied by error 5; see Conventions → Identifiers |
 
 Response: `id_by_customer`.
 
@@ -465,7 +465,7 @@ Purpose: one transaction with full detail. Safety: read.
 | Parameter | Required | Type | Allowed values / format | Notes |
 |---|---|---|---|---|
 | `api_key` | yes | string | | |
-| `id_by_customer` | yes | integer | **URL path segment**: `POST /transactions/get/123` (fallback: body field) | not declared in the spec; implied by the description and error 5; see Conventions → Identifiers |
+| `id_by_customer` | yes | integer | **URL path segment**: `POST /transactions/get/123` (verified live) | not declared in the spec; implied by the description and error 5; see Conventions → Identifiers |
 
 Response `data` (object): `id_by_customer`, `account` (declared integer, example `"1200"`), `to_from`, `booking_date`, `value_date`, `amount`, `currency`, `account_number` (IBAN), `bank_code` (BIC), `bank_name`, `purpose`, `type`, `booking_text`.
 
@@ -1414,7 +1414,7 @@ POST /postings/add/transaction
 → {"success": true, "message": ""}
 ```
 
-Notes: the spec only says the amounts must sum to the transaction amount in format `0000.00`; whether an outgoing (negative) transaction expects `"119.00"` or `"-119.00"` is not stated — if code 27 "total amount … does not match" comes back, flip the sign. Send `oi_receipts_ids_by_customer` only if open-item posting is activated for the customer (otherwise omit it). Verify with `/postings/get` (`date_from`/`date_to` around 2026-08-20, `account: "1200"`).
+Notes: the spec only says the amounts must sum to the transaction amount in format `0000.00`; send positive `amounts` also for outgoing (negative) transactions — verified live 2026-09-13 (`"95.05"` accepted on a `-95.05` transaction; `/postings/get` returns the amount unsigned with `credit_type` `H`). The server appends the transaction's `to_from` to `postingtexts` in the stored posting text.
 
 ### (b) Create a free posting and attach a receipt
 
@@ -1518,7 +1518,7 @@ Before adding, check `/settings/get/creditors` (page with `limit`/`offset`, defa
 
 Inconsistencies found in `v1.de.json` 1.9.1, each cross-checked with `jq` against the raw file.
 
-1. **Missing id parameter.** `/receipts/get/id_by_customer`, `/receipts/delete/id_by_customer`, `/receipts/restore/id_by_customer` and `/transactions/get/id_by_customer` declare only `api_key` (plus `get_file`), yet each defines error 5 "invalid id_by_customer specified". The literal `id_by_customer` in the path is a placeholder: existing clients call `POST /receipts/get/123` etc. with the id as the last path segment. A body field `id_by_customer` is the untested fallback. Not verified live.
+1. **Missing id parameter.** `/receipts/get/id_by_customer`, `/receipts/delete/id_by_customer`, `/receipts/restore/id_by_customer` and `/transactions/get/id_by_customer` declare only `api_key` (plus `get_file`), yet each defines error 5 "invalid id_by_customer specified". The literal `id_by_customer` in the path is a placeholder: the real URL carries the id as the last path segment (`POST /receipts/get/123`), verified live on 2026-09-13; the literal path itself is not an endpoint (returns HTML).
 2. **Phantom required field.** `definitions.PostingsFree.items.required` lists `amounts` while the property is `amount`. No payload can satisfy the schema literally; send `amount`.
 3. **`postingstexts` typo.** `definitions.ReceiptPostings` spells the field `postingstexts` and does not list it as required, whereas `/postings/add/receipt` uses `postingtexts` and requires it. `TransactionPostings` spells it `postingtexts`. Which spelling the server accepts on the batch endpoint is not verifiable from the spec.
 4. **Conditional fields flagged required.** `/postings/add/receipt` marks both `creditor` and `debtor` required and describes each as required only for the matching receipt type; `ReceiptPostings` requires both. `/postings/add/transaction` marks `oi_receipts_ids_by_customer` required but says it is only required with OI posting activated.
