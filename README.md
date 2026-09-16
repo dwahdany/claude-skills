@@ -44,6 +44,7 @@ npx skills update              # if installed via npx skills
 | `/i-have-adhd` | ADHD-friendly output shaping: lead with the next action, number multi-step work, restate state each turn, cap lists, no preamble or closers. Vendored from [ayghri/i-have-adhd](https://github.com/ayghri/i-have-adhd) (MIT). |
 | `/gworkspace` | Read and write Google Docs, Drive, Gmail, Calendar, Sheets and Slides through a local [`workspace-mcp`](https://github.com/taylorwilsdon/google_workspace_mcp) server; tools are discovered from the server at runtime. |
 | `/nexudus` | Member API client for [Nexudus](https://www.nexudus.com)-powered coworking portals (`*.nexudus.site`): parcels/deliveries, room bookings, visitor invites, invoices, plans. 39 endpoint aliases plus a raw-path escape hatch. |
+| `/subtitle-translate` | Translate a video's subtitle track (or an `.srt`) into another language with a subagent workflow (style guide → per-batch translation → per-batch review), retime cues so they stay readable, and mux the new track into a copy of the MKV. Ships `uv run` scripts for batching, assembly, retiming and muxing plus an offline Argos fallback. |
 
 ## Python-backed skills (Prime Agent)
 
