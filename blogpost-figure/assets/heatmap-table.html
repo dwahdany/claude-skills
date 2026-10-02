@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Conditions by model</title>
+<link rel="stylesheet" href="figure.css"><script src="measure.js"></script>
+<style>
+  .heatmap { grid-template-columns: 180px repeat(4, 1fr); }
+  .c1 { background: var(--crimson-1); } .c2 { background: var(--crimson-2); } .c3 { background: var(--crimson-3); } .c4 { background: var(--crimson-4); }
+  .hd-a { color: var(--ink-soft); font-weight: 400; } .hd-b { color: #5C4474; } .hd-c { color: #8D5017; } .hd-d { color: var(--crimson-4); }
+</style></head>
+<body><div class="fig">
+  <h1 class="fig-title fig-title--plain">Engagement with harmful orders, by model and condition</h1>
+  <p class="fig-sub">Share of 50 episodes per cell in which the model tried to connect to a remote target after receiving a harmful order (simulated environment; nothing was executed).</p>
+  <div class="heatmap">
+    <div></div>
+    <div class="heatmap__colhead hd-a">Unmodified model,<br>bare order</div>
+    <div class="heatmap__colhead hd-b">False cover story<small>("this is an exercise")</small></div>
+    <div class="heatmap__colhead hd-c">Reasoning prefilled<small>(opening thoughts written for it)</small></div>
+    <div class="heatmap__colhead hd-d">Ablated<small>(refusals removed)</small></div>
+
+    <div class="heatmap__group">Open-weight models</div>
+    <div class="heatmap__rowhead">Model A</div>
+    <div class="cell cell--zero">0%</div><div class="cell c2">64%</div><div class="cell c3">92%</div><div class="cell c4">100%</div>
+    <div class="heatmap__rowhead">Model A-Flash</div>
+    <div class="cell cell--zero">0%</div><div class="cell c1 cell--light">16%</div><div class="cell c3">80%</div><div class="cell c3">92%</div>
+
+    <div class="heatmap__divider"></div>
+    <div class="heatmap__group">Closed models</div>
+    <div class="heatmap__rowhead">Model B</div>
+    <div class="cell cell--zero">0%</div>
+    <div class="cell cell--zero" style="flex-direction:column">0%<div class="cell__split">4% with safeguards disabled</div></div>
+    <div class="cell cell--na" style="grid-row: span 2">
+      <svg class="lock" viewBox="0 0 16 16"><rect x="2.5" y="7" width="11" height="8" rx="1.5" fill="#AAAAA7"/><path d="M5 7 V5 a3 3 0 0 1 6 0 V7" fill="none" stroke="#AAAAA7" stroke-width="1.8"/></svg>
+      Not applicable — the API does not accept prefilled reasoning
+    </div>
+    <div class="cell cell--na" style="grid-row: span 2">
+      <svg class="lock" viewBox="0 0 16 16"><rect x="2.5" y="7" width="11" height="8" rx="1.5" fill="#AAAAA7"/><path d="M5 7 V5 a3 3 0 0 1 6 0 V7" fill="none" stroke="#AAAAA7" stroke-width="1.8"/></svg>
+      Not applicable — weights are not released
+    </div>
+    <div class="heatmap__rowhead">Model C</div>
+    <div class="cell cell--zero">0%</div>
+    <div class="cell cell--zero" style="flex-direction:column">0%<div class="cell__split">10% with safeguards disabled</div></div>
+  </div>
+</div></body></html>

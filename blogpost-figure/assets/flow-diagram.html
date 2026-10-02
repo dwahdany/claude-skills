@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>How the loop works</title>
+<link rel="stylesheet" href="figure.css"><script src="measure.js"></script>
+<style>
+  /* template-local layout: a row of nodes joined by arrows, an input column, a return loop */
+  .flow { display: grid; grid-template-columns: 1fr; gap: 0; }
+  .flow__row { display: flex; align-items: center; gap: 0; }
+  .flow__row .node { flex: 1 1 0; min-height: 150px; display: flex; flex-direction: column; justify-content: center; }
+  .inputs { display: flex; gap: 60px; align-items: flex-start; margin-bottom: 18px; }
+  .inputs .node { width: 200px; min-height: 0; padding: 16px 14px; }
+  .inputs__col { display: flex; flex-direction: column; align-items: center; }
+  .inputs__kicker { color: var(--muted); font-size: var(--fs-label); margin-bottom: 8px; align-self: flex-start; }
+  .loop { position: relative; height: 90px; }
+  .loop svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .loop__label { position: absolute; left: 50%; transform: translateX(-50%); top: 60px; color: var(--accent); font-size: var(--fs-label); white-space: nowrap; }
+  .best { position: absolute; right: 0; top: -150px; width: 240px; }
+  .up-arrow { position: absolute; pointer-events: none; }
+  .up-arrow svg { position: absolute; overflow: visible; }
+  .up-arrow__label { position: absolute; color: var(--muted); font-size: var(--fs-small); text-align: right; line-height: 1.25; width: 170px; }
+</style></head>
+<body><div class="fig">
+  <h1 class="fig-title">How the automated researchers work: propose a method, train a small model, get it scored, repeat</h1>
+
+  <div class="inputs">
+    <div class="inputs__col">
+      <div class="inputs__kicker">Literature review, once per run</div>
+      <div class="node outline"><div class="node__title">Librarian agents</div><div class="node__body">Search the web</div></div>
+      <div class="arrow arrow--gray"><svg width="20" height="34" viewBox="0 0 20 34"><defs><marker id="hg" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="currentColor"/></marker></defs><line x1="10" y1="0" x2="10" y2="26" stroke="currentColor" stroke-width="2" marker-end="url(#hg)"/></svg></div>
+      <div class="node outline"><div class="node__title">Shared survey</div><div class="node__body">of prior methods</div></div>
+    </div>
+    <div class="inputs__col" style="padding-top:36px">
+      <div class="node outline" style="width:260px"><div class="node__title">Briefing</div><div class="node__body">The alignment failure, its benchmarks and the rules</div></div>
+    </div>
+  </div>
+
+  <div class="flow" style="position:relative">
+    <div class="node outline--accent best" id="node-best"><div class="node__title">Best method</div></div>
+    <div class="up-arrow" data-from="node-leaderboard" data-to="node-best"><svg></svg><div class="up-arrow__label">after 48 hours, or<br>when scores plateau</div></div>
+    <div class="flow__row">
+      <div class="node tint-accent" id="node-aar"><div class="node__title">Automated researcher</div><div class="node__body">Proposes a method, writes a mini-paper</div></div>
+      <div class="arrow arrow--accent"><svg width="44" height="20" viewBox="0 0 44 20"><defs><marker id="ha" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="currentColor"/></marker></defs><line x1="4" y1="10" x2="34" y2="10" stroke="currentColor" stroke-width="2.5" marker-end="url(#ha)"/></svg></div>
+      <div class="node tint-blue"><div class="node__title">Monitor</div><div class="node__body">Approves the code only if it follows the rules</div></div>
+      <div class="arrow arrow--accent"><svg width="44" height="20" viewBox="0 0 44 20"><line x1="4" y1="10" x2="34" y2="10" stroke="currentColor" stroke-width="2.5" marker-end="url(#ha)"/></svg></div>
+      <div class="node tint-gray"><div class="node__title">Train</div><div class="node__body">Small open model, 1 GPU, about 30 min</div></div>
+      <div class="arrow arrow--accent"><svg width="44" height="20" viewBox="0 0 44 20"><line x1="4" y1="10" x2="34" y2="10" stroke="currentColor" stroke-width="2.5" marker-end="url(#ha)"/></svg></div>
+      <div class="dashed-group" style="flex:1 1 0; display:flex">
+        <div class="node tint-blue" style="flex:1"><div class="node__title">Evaluator</div><div class="node__body">Scores the model: safety benchmarks + capability check</div></div>
+        <div class="dashed-group__caption">Isolated: held-out data stays hidden</div>
+      </div>
+      <div class="arrow arrow--accent arrow--labelled arrow--muted-label" style="flex-direction:column"><div class="arrow__label">Scores</div><svg width="44" height="20" viewBox="0 0 44 20"><line x1="4" y1="10" x2="34" y2="10" stroke="currentColor" stroke-width="2.5" marker-end="url(#ha)"/></svg></div>
+      <div class="node tint-gray" id="node-leaderboard"><div class="node__title">Leaderboard and forum</div><div class="node__body">Shared by all researchers</div></div>
+    </div>
+    <!-- return loop: drawn by the script below between the centres of data-loop-from and data-loop-to -->
+    <div class="loop" data-loop-from="node-leaderboard" data-loop-to="node-aar" data-loop-color="#B86046">
+      <svg></svg>
+      <div class="loop__label">Next iteration, in a fresh session</div>
+    </div>
+  </div>
+  <p class="fig-foot" style="text-align:center">Five researchers run this loop in parallel on the same alignment failure.</p>
+</div>
+<script>
+// Connectors that follow the layout: a return loop under the row and an up-arrow to a floating node.
+(function () {
+  function rect(id) { var r = document.getElementById(id).getBoundingClientRect(); return { l: r.left + scrollX, r: r.right + scrollX, t: r.top + scrollY, b: r.bottom + scrollY, cx: (r.left + r.right) / 2 + scrollX }; }
+  document.querySelectorAll('.loop[data-loop-from]').forEach(function (el) {
+    var a = rect(el.dataset.loopFrom), b = rect(el.dataset.loopTo), box = el.getBoundingClientRect();
+    var top = box.top + scrollY, left = box.left + scrollX, y = 52, color = el.dataset.loopColor || '#B86046';
+    var x1 = a.cx - left, x2 = b.cx - left, drop = Math.max(0, a.b - top);
+    var svg = el.querySelector('svg');
+    svg.setAttribute('width', box.width); svg.setAttribute('height', box.height + 20);
+    svg.style.top = '-10px';
+    svg.innerHTML = '<path d="M ' + x1 + ' ' + (drop + 10) + ' V ' + (y - 2) + ' Q ' + x1 + ' ' + (y + 10) + ' ' + (x1 - 12) + ' ' + (y + 10) +
+      ' H ' + (x2 + 12) + ' Q ' + x2 + ' ' + (y + 10) + ' ' + x2 + ' ' + (y - 2) + ' V 14" fill="none" stroke="' + color + '" stroke-width="2.5"/>' +
+      '<path d="M ' + (x2 - 8) + ' 22 L ' + x2 + ' 8 L ' + (x2 + 8) + ' 22 z" fill="' + color + '"/>';
+    el.querySelector('.loop__label').style.top = (y + 18) + 'px';
+  });
+  document.querySelectorAll('.up-arrow[data-from]').forEach(function (el) {
+    var a = rect(el.dataset.from), b = rect(el.dataset.to), parent = el.offsetParent.getBoundingClientRect();
+    var x = a.cx - parent.left - scrollX, y1 = a.t - parent.top - scrollY, y2 = b.b - parent.top - scrollY;
+    el.style.left = '0'; el.style.top = '0';
+    var svg = el.querySelector('svg'); svg.setAttribute('width', parent.width); svg.setAttribute('height', parent.height);
+    svg.innerHTML = '<path d="M ' + x + ' ' + y1 + ' V ' + (y2 + 14) + '" fill="none" stroke="#B86046" stroke-width="2.5"/>' +
+      '<path d="M ' + (x - 8) + ' ' + (y2 + 16) + ' L ' + x + ' ' + (y2 + 2) + ' L ' + (x + 8) + ' ' + (y2 + 16) + ' z" fill="#B86046"/>';
+    var lab = el.querySelector('.up-arrow__label'); lab.style.left = (x - 190) + 'px'; lab.style.top = ((y1 + y2) / 2 - 14) + 'px';
+  });
+})();
+</script>
+</body></html>
