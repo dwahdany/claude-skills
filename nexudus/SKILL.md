@@ -13,6 +13,8 @@ await nexudus("deliveries", pending=False)  # full history
 await nexudus("delivery", target="<id>")
 await nexudus("collect", target="<id>")     # mark collected
 await nexudus("visitors")                   # upcoming guests
+await nexudus("resources")                  # bookable rooms/booths: Id | Name | ResourceTypeName
+await nexudus("bookings")                   # my upcoming bookings (ResourceName, FromTime local)
 await nexudus.invite_visitor("Ada Lovelace", "ada@example.com", "2026-09-01T10:00:00")
 await nexudus.create_booking(<resource_id>, "2026-09-01T09:00:00.000Z", "2026-09-01T09:30:00.000Z",
                              coworker_full_name="Your Name", preview_only=True)   # price it
@@ -25,6 +27,11 @@ await nexudus("path", target="/api/public/countries", anon=True)   # no login ne
 ```
 
 Shell form: `nexudus deliveries --pending False --raw True`
+
+Book a room: `resources` (or a past booking) gives the `ResourceId`, `profile` gives your
+coworker `Id`, then `booking_available(...)` -> `create_booking(..., preview_only=True)` to see
+the price -> `create_booking(..., preview_only=False)` to commit -> `bookings` to confirm.
+Times go in as UTC; records come back in the space's local time (see api.md, "Time zones").
 
 `<tenant-slug>` is the first label of the portal host: `https://<slug>.nexudus.site/...`.
 
@@ -52,7 +59,9 @@ Tokens are cached in `~/.cache/nexudus/token-<site>.json`.
 2. `POST {base}/api/token` with `grant_type=password` -> `access_token` (JWT).
 3. `GET/POST {base}/api/public/...` with `Authorization: Bearer <jwt>`.
 
-Unauthenticated, no credentials needed: `business`, `configuration`, `resources`,
-`published-plans`, `public-events`, `countries`, plus `https://<site>.nexudus.site/llms.txt` for a human-readable site summary.
+Work without credentials: `business`, `configuration`, `resources`, `published-plans`,
+`public-events`, `countries`, plus `https://<site>.nexudus.site/llms.txt` for a human-readable
+site summary. They log in anyway when credentials are configured, because the anonymous
+resource list omits member-only rooms; pass `anon=True` to force an unauthenticated call.
 
 See [references/api.md](references/api.md) for the endpoint map and troubleshooting.

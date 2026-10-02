@@ -54,7 +54,9 @@ then `GET /api/sys/users/exchange?token=...&validForInMinutes=1440`.
   `/api/public/configuration`, `/api/public/countries`,
   `/api/public/events?onlyHomePage=true`, `/api/public/blogPosts`,
   `/api/public/plans/published`, `/api/public/resources/published/summary`,
-  `/api/public/resources/published/details`, `/api/public/store/products`
+  `/api/public/store/products`. `/api/public/resources/published/details` is **401 without a
+  token** on at least one tenant (LISA, 2026-09-30), and the anonymous `summary` omits
+  member-only resources — list resources with a token when you have one (see Resources).
 - The paths advertised in `llms.txt` (`/api/public/resources`, `/api/public/tariffs`,
   `/api/public/bootstrap`) are **wrong** -> 404. Use the ones above.
 - Query modifiers the API understands: `?page=`, `?size=`, `?_shape=Field1,Field2`
@@ -82,6 +84,32 @@ then `GET /api/sys/users/exchange?token=...&validForInMinutes=1440`.
 Record fields: `FullName, Email, PhoneNumber, HostApprovalStatus, Notes, ExpectedArrival,
 UtcExpectedArrival, Arrived, ArrivalDate, Id, UniqueId`.
 
+## Resources (rooms, booths, desks)
+
+Both `GET /api/public/resources/published/summary` and `.../details` return **one object with
+three arrays**, not a flat list:
+
+```
+{"ResourceTypes": [{Id, Name, ...}],                       # e.g. "4 Seat Meeting Rooms/Pods"
+ "Resources":     [{Id, Name, ResourceTypeName, BusinessId, BusinessName, UniqueId, ...}],
+ "NetworkResources": [ ...same records... ]}
+```
+
+- The bookable rooms are in `Resources` (`Name` like `"Midas (B)"`, `ResourceTypeName` like
+  `"Private Phone Booth"`). `ResourceTypes` are only the categories. A helper that grabs the
+  first list it sees will show you 9 categories and no rooms — pick `Resources` explicitly.
+- `details` adds the full record: `Allocation`, `AllowMultipleBookings`, `AvailableUnits`,
+  `BookInAdvanceLimit`, `BusinessAddress`, pricing, amenities. It required a token on LISA.
+- `?resourceTypeId=<id>` is **ignored** by `summary` (identical body with or without it).
+  Filter client-side on `ResourceTypeName`.
+- Anonymous vs authenticated differ: on LISA the anon `summary` had 43 resources / 8 types,
+  the authenticated one 44 / 9 — the member-only "Private Phone Booth" type and its room only
+  appear with a token.
+- `GET /api/public/bookings/suggestions` -> `{"Suggestions": [booking records]}` — your
+  recently/regularly booked resources, each with `ResourceId`, `ResourceName`, `Resource{...}`.
+  Cheapest way to resolve "the room I usually book" to an id; `bookings/my?showUpcoming=false`
+  works the same way for anything you have booked before.
+
 ## Bookings
 
 | Call | Path |
@@ -107,7 +135,24 @@ both with body `{"Basket":[{"Type":"booking","Booking":{...}}],"agreedTermsAndCo
 and priced lines; invoice returns an **empty body (`None`)** on success — confirm by re-listing
 `bookings`. Booking credits show as an offsetting negative line, giving a £0.00 invoice.
 `POST /api/public/bookings/available` without `CoworkerId` fails the
-"Must have Plan or Coworking to Book" rule and returns `Available=false`.
+"Must have Plan or Coworking to Book" rule and returns `Available=false`. A free slot returns
+`{"CoworkerId": null, "BookingId": null, "Available": true, "ErrorCode": null}`.
+
+**Time zones.** Send `FromTime`/`ToTime` in UTC (`2026-09-30T19:30:00Z`, with `.000Z` in the
+basket booking object). Because the client sends `X-Use-Timezone: true`, records come back with
+`FromTime`/`ToTime` in the *space's local time* (`"2026-09-30T20:30:00"` for London in BST)
+plus `FromTimeUtc`/`ToTimeUtc`; the basket preview line shows both (`SaleDate` local,
+`SaleDateUtc`). Compare against the `*Utc` fields, not `FromTime`, when checking what you booked.
+
+**Verified booking recipe (LISA, 2026-09-30, booking #1457398250):**
+
+1. `GET /api/public/coworkers/profiles` -> `[{Id: <coworkerId>, FullName, ...}]`
+2. Resolve the room id from `resources/published/summary` (`Resources[].Name`) or a past booking.
+3. `POST /api/public/bookings/available` `{ResourceId, FromTime, ToTime, CoworkerId}` -> `Available: true`
+4. `POST /api/public/checkout/basket/preview` with the basket body -> `preview.TotalFormated`
+   (`"£0.00"` when plan credits cover it) and `LinesRaw[0].Description` naming room and slot.
+5. `POST /api/public/checkout/basket/invoice` with the same body -> `null` body, HTTP 200.
+6. `GET /api/public/bookings/my?showUpcoming=true` -> the new booking with its `Id`.
 
 ## Other member write surfaces in the bundle
 

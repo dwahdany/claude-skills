@@ -86,6 +86,12 @@ class NexudusError(RuntimeError):
     pass
 
 
+def _has_credentials(site: str | None = None) -> bool:
+    """True when an email+password are configured (env or credentials file)."""
+    cred = _load_credentials(site)
+    return bool(cred["email"] and cred["password"])
+
+
 def _load_credentials(site: str | None = None) -> dict[str, Any]:
     cfg: dict[str, Any] = {}
     if CRED_FILE.exists():
@@ -300,7 +306,9 @@ def _rows(payload: Any) -> list[dict]:
     if isinstance(payload, list):
         return payload
     if isinstance(payload, dict):
-        for key in ("Records", "Results", "Items", "Value", "Data"):
+        # "Resources" first: resources/published/{summary,details} return
+        # {ResourceTypes, Resources, NetworkResources}; the rooms live in Resources.
+        for key in ("Records", "Results", "Items", "Value", "Data", "Resources"):
             inner = payload.get(key)
             if isinstance(inner, list):
                 return inner
@@ -327,7 +335,7 @@ def _summarise(payload: Any, limit: int = 20) -> str:
     preferred = [
         "Id", "Name", "Title", "Notes", "Description", "Status", "Carrier", "TrackingNumber",
         "ArrivedOn", "CollectedOn", "Collected", "CoworkerName", "CoworkerFullName",
-        "ResourceName", "FromTime", "ToTime", "InvoiceNumber", "Total", "TotalPrice",
+        "ResourceName", "ResourceTypeName", "FromTime", "ToTime", "InvoiceNumber", "Total", "TotalPrice",
         "PriceFormatted", "BusinessName",
     ]
     out = [f"{len(rows)} record(s)"]
@@ -362,6 +370,9 @@ async def _run(
     method: HTTP method for action="path".
     data:   JSON body string for POST/PUT calls.
     raw:    return full JSON instead of a summarised table.
+    anon:   force an unauthenticated call. Public aliases (business, configuration,
+            resources, ...) authenticate automatically when credentials are configured,
+            because the anonymous listing hides member-only resources.
     """
     site_arg = site or None
     if action == "endpoints":
@@ -388,8 +399,9 @@ async def _run(
                 return f"action={action!r} needs target=<id>"
             path = path.replace("{id}", str(target))
         path = path.replace("{pending}", str(pending).lower())
+        authed = not anon and (action not in PUBLIC_ACTIONS or _has_credentials(site_arg))
         payload = await request(path, method=method if method != "GET" else meth, data=body,
-                                site=site_arg, authenticated=action not in PUBLIC_ACTIONS)
+                                site=site_arg, authenticated=authed)
     return json.dumps(payload, indent=2, default=str) if raw else _summarise(payload, limit)
 
 
@@ -415,7 +427,8 @@ async def run(
     data:   JSON body string for POST/PUT calls.
     raw:    return full JSON instead of a summarised table.
     limit:  max rows in the summary.
-    anon:   skip authentication (for public endpoints) when action="path".
+    anon:   force an unauthenticated call (public aliases otherwise log in when they can,
+            since the anonymous resource list omits member-only rooms).
     """
     try:
         return await _run(action, target, site, pending, method, data, raw, limit, anon)
