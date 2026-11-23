@@ -11,10 +11,14 @@ Two options — pick one, not both. Both end up at `~/.claude/skills/<name>/`, s
 The checkout *is* the repo, so you can hack on a skill and push it back.
 
 ```sh
-git clone https://github.com/dwahdany/claude-skills.git ~/.claude/skills
+git clone --recurse-submodules https://github.com/dwahdany/claude-skills.git ~/.claude/skills
 ```
 
-Or with SSH: `git clone git@github.com:dwahdany/claude-skills.git ~/.claude/skills`
+Or with SSH: `git clone --recurse-submodules git@github.com:dwahdany/claude-skills.git ~/.claude/skills`
+
+`--recurse-submodules` checks out the [third-party skills](#third-party-skills) that are vendored as
+git submodules under `vendor/`. Without it their top-level symlinks (e.g. `socratic-tutor`) dangle
+and Claude Code silently skips them; `git submodule update --init` fixes an existing clone.
 
 ### `npx skills` — if you just want to use them
 
@@ -26,11 +30,14 @@ npx skills add dwahdany/claude-skills --list     # just list what's available
 npx skills add dwahdany/claude-skills --skill '*' -a claude-code -g -y   # all skills, globally, no prompts
 ```
 
+The CLI initialises git submodules after cloning, and `skills.sh.json` points it at `vendor/`, so
+the vendored skills show up in the list alongside the rest.
+
 ## Update
 
 ```sh
-git -C ~/.claude/skills pull   # if cloned
-npx skills update              # if installed via npx skills
+git -C ~/.claude/skills pull --recurse-submodules   # if cloned
+npx skills update                                   # if installed via npx skills
 ```
 
 ## Skills
@@ -45,6 +52,7 @@ npx skills update              # if installed via npx skills
 | `/i-have-adhd` | ADHD-friendly output shaping: lead with the next action, number multi-step work, restate state each turn, cap lists, no preamble or closers. Vendored from [ayghri/i-have-adhd](https://github.com/ayghri/i-have-adhd) (MIT). |
 | `/gworkspace` | Read and write Google Docs, Drive, Gmail, Calendar, Sheets and Slides through a local [`workspace-mcp`](https://github.com/taylorwilsdon/google_workspace_mcp) server; tools are discovered from the server at runtime. |
 | `/nexudus` | Member API client for [Nexudus](https://www.nexudus.com)-powered coworking portals (`*.nexudus.site`): parcels/deliveries, room bookings, visitor invites, invoices, plans. 39 endpoint aliases plus a raw-path escape hatch. |
+| `/socratic-tutor` | Strict personal tutor using the Socratic method, for when you explicitly ask to be taught, quizzed or drilled on a topic: diagnostic placement, a skill map with levels 0–5, one question at a time, spaced review, final assessment. From [janestreet/agent_skills](https://github.com/janestreet/agent_skills) (MIT), vendored as a git submodule. |
 | `/subtitle-translate` | Translate a video's subtitle track (or an `.srt`) into another language with a subagent workflow (style guide → per-batch translation → per-batch review), retime cues so they stay readable, and mux the new track into a copy of the MKV. Ships `uv run` scripts for batching, assembly, retiming and muxing plus an offline Argos fallback. |
 
 ## Python-backed skills (Prime Agent)
@@ -65,16 +73,37 @@ server and expects `GWORKSPACE_MCP_TOKEN` in the environment.
 
 ## Third-party skills
 
-Some skills here are vendored from upstream projects rather than written by me. Each vendored
-skill keeps its upstream `LICENSE` in its own folder and a provenance comment at the top of
-`SKILL.md` naming the source repository and commit.
+Some skills here come from upstream projects rather than written by me. They are pulled in one
+of two ways:
 
-| Skill | Upstream | Author | License |
-|-------|----------|--------|---------|
-| `i-have-adhd` | [ayghri/i-have-adhd](https://github.com/ayghri/i-have-adhd) | Ayoub Ghriss | MIT |
+- **Copied** — `SKILL.md` and `LICENSE` live in the skill's own folder, with a provenance comment
+  at the top of `SKILL.md` naming the source repository and commit.
+- **Git submodule** — the whole upstream repository is checked out under `vendor/<name>/` at a
+  pinned commit, license included, and never edited here. Two small pieces of glue make the
+  skills inside it installable:
+  - `skills.sh.json` lists `./vendor` in `paths`, so the `skills` CLI searches it. The CLI only
+    scans the repo root one level deep, but walks declared container directories up to three
+    levels, which reaches `vendor/<name>/<skill>/SKILL.md`.
+  - A top-level symlink per skill (`socratic-tutor → vendor/janestreet/socratic-tutor`) exposes
+    it at `~/.claude/skills/<skill>/` for the clone install. Claude Code only loads skills one
+    level deep but does follow symlinked skill directories. The CLI ignores the symlinks, so
+    nothing is listed twice.
 
-To refresh a vendored skill, re-copy `SKILL.md` and `LICENSE` from upstream and update the
-provenance comment's commit hash.
+| Skill | Upstream | Author | License | How |
+|-------|----------|--------|---------|-----|
+| `i-have-adhd` | [ayghri/i-have-adhd](https://github.com/ayghri/i-have-adhd) | Ayoub Ghriss | MIT | copied |
+| `socratic-tutor` | [janestreet/agent_skills](https://github.com/janestreet/agent_skills) | Jane Street Group | MIT | submodule at `vendor/janestreet` |
+
+To refresh a copied skill, re-copy `SKILL.md` and `LICENSE` from upstream and update the
+provenance comment's commit hash. To refresh a submodule, move it to upstream's current HEAD and
+commit the new pin:
+
+```sh
+git submodule update --remote vendor/janestreet
+git add vendor/janestreet && git commit -m "Bump janestreet/agent_skills"
+```
+
+If upstream adds a skill, add a matching top-level symlink (`ln -s vendor/janestreet/<skill> <skill>`).
 
 ### `i-have-adhd` always-on
 
@@ -114,3 +143,12 @@ if it is not installed; `jq` and `curl` are required. Read calls run freely; any
 ## Adding a skill
 
 Create `<name>/SKILL.md` with frontmatter (`name`, `description`, optionally `disable-model-invocation: true`), then commit and push. Top-level skill directories are picked up by both install methods — the `skills` CLI walks the repo root one level deep, so no `skills/` container directory is needed.
+
+To pull in a whole upstream repository instead, add it as a submodule and symlink its skills to the root:
+
+```sh
+git submodule add https://github.com/<owner>/<repo>.git vendor/<name>
+ln -s vendor/<name>/<skill> <skill>
+```
+
+`skills.sh.json` already covers everything under `vendor/`; add a row to the [third-party table](#third-party-skills).
