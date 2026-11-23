@@ -17,7 +17,7 @@ git clone --recurse-submodules https://github.com/dwahdany/claude-skills.git ~/.
 Or with SSH: `git clone --recurse-submodules git@github.com:dwahdany/claude-skills.git ~/.claude/skills`
 
 `--recurse-submodules` checks out the [third-party skills](#third-party-skills) that are vendored as
-git submodules under `vendor/`. Without it their top-level symlinks (e.g. `socratic-tutor`) dangle
+git submodules under `vendor/`. Without it their top-level symlinks (`i-have-adhd`, `socratic-tutor`) dangle
 and Claude Code silently skips them; `git submodule update --init` fixes an existing clone.
 
 ### `npx skills` — if you just want to use them
@@ -49,7 +49,7 @@ npx skills update                                   # if installed via npx skill
 | `/paper-figure` | Publication-ready figure styling for ML papers (ICML format) — matplotlib/seaborn setup, vector PDF output, colorblind-safe palettes, separate legend export, LaTeX integration. |
 | `/blogpost-figure` | Screen-first figures for blog posts in a research-blog house style — takeaway-sentence headline, gray subtitle, direct labels instead of legends, terracotta hero vs steel-blue baseline, retina PNG + WebP. Ships a matplotlib helper module (`blogfig.py`) with rendered recipes for every chart form, HTML/CSS templates for flow diagrams, quote cards, heatmap tables and card dashboards, and a headless-Chrome renderer. Counterpart to `/paper-figure`. One-time setup: `uv run --with matplotlib blogpost-figure/scripts/fetch_fonts.py` (OFL fonts into the git-ignored `fonts/`); the HTML templates need Google Chrome/Chromium or Playwright. |
 | `/buchhaltungsbutler` | Operate [BuchhaltungsButler](https://www.buchhaltungsbutler.de/) through its API (Belege hochladen, Zahlungen zuordnen, buchen, Auswertungen) and apply German bookkeeping rules for a small UG/GmbH — SKR03/SKR04, Steuerschlüssel, §13b, UStVA, GoBD. API credentials come from Bitwarden CLI; see [setup](#buchhaltungsbutler-setup). |
-| `/i-have-adhd` | ADHD-friendly output shaping: lead with the next action, number multi-step work, restate state each turn, cap lists, no preamble or closers. Vendored from [ayghri/i-have-adhd](https://github.com/ayghri/i-have-adhd) (MIT). |
+| `/i-have-adhd` | ADHD-friendly output shaping: lead with the next action, number multi-step work, restate state each turn, cap lists, no preamble or closers. From [ayghri/i-have-adhd](https://github.com/ayghri/i-have-adhd) (MIT), vendored as a git submodule. |
 | `/gworkspace` | Read and write Google Docs, Drive, Gmail, Calendar, Sheets and Slides through a local [`workspace-mcp`](https://github.com/taylorwilsdon/google_workspace_mcp) server; tools are discovered from the server at runtime. |
 | `/nexudus` | Member API client for [Nexudus](https://www.nexudus.com)-powered coworking portals (`*.nexudus.site`): parcels/deliveries, room bookings, visitor invites, invoices, plans. 39 endpoint aliases plus a raw-path escape hatch. |
 | `/socratic-tutor` | Strict personal tutor using the Socratic method, for when you explicitly ask to be taught, quizzed or drilled on a topic: diagnostic placement, a skill map with levels 0–5, one question at a time, spaced review, final assessment. From [janestreet/agent_skills](https://github.com/janestreet/agent_skills) (MIT), vendored as a git submodule. |
@@ -73,43 +73,49 @@ server and expects `GWORKSPACE_MCP_TOKEN` in the environment.
 
 ## Third-party skills
 
-Some skills here come from upstream projects rather than written by me. They are pulled in one
-of two ways:
+Some skills here come from upstream projects rather than written by me. Each one is a git
+submodule under `vendor/<name>/`: the whole upstream repository, license included, checked out
+at a pinned commit and never edited here. Two small pieces of glue make the skills inside it
+installable:
 
-- **Copied** — `SKILL.md` and `LICENSE` live in the skill's own folder, with a provenance comment
-  at the top of `SKILL.md` naming the source repository and commit.
-- **Git submodule** — the whole upstream repository is checked out under `vendor/<name>/` at a
-  pinned commit, license included, and never edited here. Two small pieces of glue make the
-  skills inside it installable:
-  - `skills.sh.json` lists `./vendor` in `paths`, so the `skills` CLI searches it. The CLI only
-    scans the repo root one level deep, but walks declared container directories up to three
-    levels, which reaches `vendor/<name>/<skill>/SKILL.md`.
-  - A top-level symlink per skill (`socratic-tutor → vendor/janestreet/socratic-tutor`) exposes
-    it at `~/.claude/skills/<skill>/` for the clone install. Claude Code only loads skills one
-    level deep but does follow symlinked skill directories. The CLI ignores the symlinks, so
-    nothing is listed twice.
+- `skills.sh.json` lists `./vendor` in `paths`, so the `skills` CLI searches it. The CLI only
+  scans the repo root one level deep, but walks declared container directories up to three
+  levels, which reaches both `vendor/<name>/<skill>/SKILL.md` and
+  `vendor/<name>/skills/<skill>/SKILL.md`.
+- A top-level symlink per skill (e.g. `socratic-tutor → vendor/janestreet/socratic-tutor`)
+  exposes it at `~/.claude/skills/<skill>/` for the clone install. Claude Code only loads skills
+  one level deep but does follow symlinked skill directories. The CLI ignores the symlinks, so
+  nothing is listed twice.
 
-| Skill | Upstream | Author | License | How |
-|-------|----------|--------|---------|-----|
-| `i-have-adhd` | [ayghri/i-have-adhd](https://github.com/ayghri/i-have-adhd) | Ayoub Ghriss | MIT | copied |
-| `socratic-tutor` | [janestreet/agent_skills](https://github.com/janestreet/agent_skills) | Jane Street Group | MIT | submodule at `vendor/janestreet` |
+| Skill | Upstream | Author | License | Submodule | Skill path inside it |
+|-------|----------|--------|---------|-----------|----------------------|
+| `i-have-adhd` | [ayghri/i-have-adhd](https://github.com/ayghri/i-have-adhd) | Ayoub Ghriss | MIT | `vendor/i-have-adhd` | `skills/i-have-adhd` |
+| `socratic-tutor` | [janestreet/agent_skills](https://github.com/janestreet/agent_skills) | Jane Street Group | MIT | `vendor/janestreet` | `socratic-tutor` |
 
-To refresh a copied skill, re-copy `SKILL.md` and `LICENSE` from upstream and update the
-provenance comment's commit hash. To refresh a submodule, move it to upstream's current HEAD and
-commit the new pin:
+### Pinning
+
+The pinned commit is not in `.gitmodules` (that file only holds path and URL); git records it as
+a gitlink entry in the tree, and `git submodule status` shows the current pins. A commit hash
+covers the whole tree, and git verifies every object it fetches against its hash, so upstream
+cannot change what a pin resolves to. If upstream rewrites history and the pinned commit
+disappears, the fetch fails loudly instead of installing something else. New upstream content
+only enters when you bump the pin, so review it then:
 
 ```sh
-git submodule update --remote vendor/janestreet
-git add vendor/janestreet && git commit -m "Bump janestreet/agent_skills"
+git submodule update --remote vendor/<name>     # move the checkout to upstream HEAD
+git diff --submodule=diff vendor/<name>         # read what changed
+git add vendor/<name> && git commit -m "Bump <name>"
 ```
 
-If upstream adds a skill, add a matching top-level symlink (`ln -s vendor/janestreet/<skill> <skill>`).
+If upstream adds a skill, add a matching top-level symlink
+(`ln -s vendor/<name>/<path-to-skill> <skill>`).
 
 ### `i-have-adhd` always-on
 
 Installing the skill only registers the command; nothing changes until you invoke it. To apply
 the rules from message one of every session, put upstream's condensed snippet
-([INSTALL.md](https://github.com/ayghri/i-have-adhd/blob/main/INSTALL.md), "Always-on") into the
+([INSTALL.md](https://github.com/ayghri/i-have-adhd/blob/main/INSTALL.md), "Always-on"; the same
+file is checked out at `vendor/i-have-adhd/INSTALL.md`) into the
 agent's persistent context file:
 
 | Runtime | File | Loaded from |
@@ -148,7 +154,7 @@ To pull in a whole upstream repository instead, add it as a submodule and symlin
 
 ```sh
 git submodule add https://github.com/<owner>/<repo>.git vendor/<name>
-ln -s vendor/<name>/<skill> <skill>
+ln -s vendor/<name>/<path-to-skill> <skill>   # e.g. vendor/i-have-adhd/skills/i-have-adhd
 ```
 
 `skills.sh.json` already covers everything under `vendor/`; add a row to the [third-party table](#third-party-skills).

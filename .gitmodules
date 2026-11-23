@@ -1,3 +1,6 @@
 [submodule "vendor/janestreet"]
 	path = vendor/janestreet
 	url = https://github.com/janestreet/agent_skills.git
+[submodule "vendor/i-have-adhd"]
+	path = vendor/i-have-adhd
+	url = https://github.com/ayghri/i-have-adhd.git
