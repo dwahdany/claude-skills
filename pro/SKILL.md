@@ -1,6 +1,6 @@
 ---
 name: pro
-description: Explicit-invocation only — consult this skill when the user types /pro or names it directly, and not otherwise. Applies the house internal register — high-density continuous prose, stacked hyphen-compounds, ad-hoc acronym coinage, parenthetical status tags, explicit decision-rights handoffs, at a user-selected depth (P1/P2/P3). Output is prose only, shorter than its source: no tables, no glossary block, no introduction, no commentary about the pass. The depth level is the user's call and changes which readers the output loses, so this skill should never be started on Claude's own initiative — a rewrite request on its own is handled normally, without it. Counterpart to /bro, which does the inverse.
+description: "Explicit-invocation only — consult this skill when the user types /pro or names it directly, and not otherwise. Applies the house internal register — high-density continuous prose, stacked hyphen-compounds, ad-hoc acronym coinage, parenthetical status tags, explicit decision-rights handoffs, at a user-selected depth (P1/P2/P3). Output is prose only, shorter than its source: no tables, no glossary block, no introduction, no commentary about the pass. The depth level is the user's call and changes which readers the output loses, so this skill should never be started on Claude's own initiative — a rewrite request on its own is handled normally, without it. Counterpart to /bro, which does the inverse."
 disable-model-invocation: true
 argument-hint: "[1|2|3]"
 ---
