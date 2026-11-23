@@ -1,0 +1,3 @@
+[submodule "vendor/janestreet"]
+	path = vendor/janestreet
+	url = https://github.com/janestreet/agent_skills.git
